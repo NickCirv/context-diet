@@ -1,0 +1,10 @@
+{
+  "name": "context-diet",
+  "version": "1.0.0",
+  "description": "Stop burning context on things that don't need it. Analyze your Claude Code sessions and optimize your AI budget.",
+  "type": "module",
+  "bin": { "context-diet": "./index.js" },
+  "keywords": ["claude", "context-window", "ai", "optimization", "cli", "claude-code"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
