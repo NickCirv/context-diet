@@ -1,3 +1,5 @@
+![Banner](banner.svg)
+
 # context-diet 🥗
 
 Your Claude context window is not unlimited.
