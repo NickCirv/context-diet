@@ -1,118 +1,134 @@
-![Banner](banner.svg)
+![context-diet — see what's burning your Claude context window and fix it](assets/banner.png)
 
-# context-diet 🥗
+<div align="center">
 
-Your Claude context window is not unlimited.
-(It is, but it fills up fast.)
+**Stop burning context on things that don't matter. Find out what's eating your Claude session — and fix it.**
 
-Find out what's eating it and put it on a diet.
+![license](https://img.shields.io/badge/license-MIT-blue?labelColor=0B0A09)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?labelColor=0B0A09)
+![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?labelColor=0B0A09)
+![commands](https://img.shields.io/badge/commands-4-8B92F6?labelColor=0B0A09)
 
-```bash
-npx context-diet scan
-```
-
-*node_modules/: 712,000 tokens. That's why.*
+</div>
 
 ---
 
-## Install
-
-```bash
-# Run once without installing
-npx context-diet scan
-
-# Install globally
-npm install -g context-diet
-```
-
-## Commands
-
-### `scan` — See what's eating your context
-
-```bash
-context-diet scan
-context-diet scan --path ./my-project
-```
-
-Scans all files, estimates token costs, identifies the biggest hogs, and tells you exactly what to exclude. Shows a smart loading strategy for what's left.
+Your Claude Code context window holds 200,000 tokens. Most of that budget gets silently swallowed by `node_modules/`, lock files, build output, and minified assets — files that are never useful in context. `context-diet` makes the waste visible: scan your project, see the biggest offenders, and generate a `.claudeignore` that keeps future sessions lean.
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  CONTEXT DIET REPORT
-  Project: ./my-project
+context-diet · scanning ./my-project
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Claude's context window:  200,000 tokens
-  Your project (all files): 847,234 tokens  ← 4.2x too big
+  Your project (all files):  847,234 tokens  ← 4.2x too big
 
-  What fits in one session: 23% of your project
+  What fits in one session:  23% of your project
 
 TOP CONTEXT HOGS:
-  📁 node_modules/         712,000 tokens  (84%)  → EXCLUDE
-  📄 package-lock.json      45,000 tokens  (5%)   → EXCLUDE
-  📄 src/server.js           8,200 tokens  (1%)   → Large — use with subagent
-  📄 docs/api.md             4,100 tokens  (0.5%) → Load on demand only
+  📁 node_modules/          712,000 tokens  (84%)  → EXCLUDE
+  📄 package-lock.json       45,000 tokens   (5%)  → EXCLUDE
+  📄 src/server.js            8,200 tokens   (1%)  → Use with subagent
+  📄 docs/api.md              4,100 tokens  (0.5%) → Load on demand
+
+RECOMMENDED .claudeignore:
+  node_modules/
+  package-lock.json
+  dist/
+  *.min.js
+  *.map
+
+  Run: context-diet diet --write  to generate .claudeignore
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### `audit` — See what burned context in past sessions
+## Install
+
+No install required — runs straight from GitHub with zero dependencies:
 
 ```bash
-context-diet audit
+npx github:NickCirv/context-diet scan
 ```
 
-Reads `~/.claude/projects/` session files to show:
-- Which files appear in 90%+ of your sessions
-- Average bash output size (huge source of waste)
-- Recent session sizes
-
-### `diet` — Get recommendations + generate .claudeignore
+Or install globally:
 
 ```bash
-context-diet diet          # Show recommendations
-context-diet diet --write  # Generate .claudeignore file
+npm install -g github:NickCirv/context-diet
 ```
 
-Detects what's in your project and generates a `.claudeignore` — like `.gitignore` but tells Claude Code what not to load.
-
-### `watch` — Live context budget monitor
+## Usage
 
 ```bash
-context-diet watch
-context-diet watch --path ./src
+# Scan current project for context hogs
+npx github:NickCirv/context-diet scan
+
+# Scan a specific directory
+npx github:NickCirv/context-diet scan --path ./my-project
+
+# Audit past Claude Code sessions
+npx github:NickCirv/context-diet audit
+
+# Show recommendations + generate .claudeignore
+npx github:NickCirv/context-diet diet
+
+# Generate .claudeignore file immediately
+npx github:NickCirv/context-diet diet --write
+
+# Live context budget monitor (updates as files change)
+npx github:NickCirv/context-diet watch
+npx github:NickCirv/context-diet watch --path ./src
 ```
 
-Live updating bar that shows your current context budget as files change.
+| Command | Flag | Description |
+|---------|------|-------------|
+| `scan` | `--path <dir>` | Scan project, estimate token costs, identify top hogs, suggest smart loading strategy |
+| `audit` | — | Read `~/.claude/projects/` session files — shows frequently loaded files, bash output sizes, recent session sizes |
+| `diet` | `--write` | Recommendations for what to exclude; `--write` generates `.claudeignore` |
+| `watch` | `--path <dir>` | Live updating context budget bar that refreshes as files change |
 
----
+## What it finds
 
-## Token Estimation
-
-No API key needed. Uses the `~4 chars = 1 token` approximation — accurate enough to identify waste, fast enough to run on any project size.
+| Offender | Why it hurts |
+|----------|-------------|
+| `node_modules/` | Typically 500k–2M tokens — never useful in context |
+| Lock files (`package-lock.json`, `yarn.lock`, etc.) | 10k–50k tokens of machine-generated noise |
+| Build output (`dist/`, `build/`, `.next/`) | Compiled artefacts — load source instead |
+| Minified files (`*.min.js`, `*.min.css`) | Unreadable and huge — source is what you want |
+| Source maps (`*.map`) | Never useful in context |
+| Large source files (>8k tokens) | Better handled by a subagent that returns a summary |
+| Oversized bash outputs | Spotted in session history via `audit` — suggests `head`/`tail` or context-mode |
 
 ## .claudeignore
 
-`context-diet diet --write` generates a `.claudeignore` for your project. It works exactly like `.gitignore` — Claude Code reads it to skip files that would waste your context budget.
+`context-diet diet --write` generates a `.claudeignore` for your project. It works exactly like `.gitignore` — Claude Code reads it to skip files that would waste your context budget:
 
-Example `.claudeignore`:
 ```
 node_modules/
 dist/
 build/
+.next/
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 *.min.js
+*.min.css
 *.map
 coverage/
 ```
 
-## Why This Exists
+Existing `.claudeignore` files are respected — new patterns are merged, not overwritten.
 
-Every token loaded into context is a token that could have been used for actual work. Most projects have 80%+ of their token budget eaten by files that are never useful in context: lock files, build output, minified code, dependencies.
+## How it works
 
-`context-diet` makes the invisible visible.
+Pure file analysis — no API key, no network calls. Scans your project tree, estimates tokens at `~4 chars = 1 token`, and compares totals against Claude's 200k context window. Reads `.gitignore` and `.claudeignore` to compute both raw and clean totals. The `audit` command reads `~/.claude/projects/*.jsonl` session files to surface patterns from your actual usage history.
+
+## What it is NOT
+
+- **Not a Claude Code plugin or extension.** It's a standalone CLI that runs independently — no Claude session required.
+- **Not a guarantee.** Token estimates use the `~4 chars = 1 token` heuristic — accurate enough to catch major offenders, not a billing-exact count.
+- **Not a replacement for `.gitignore`.** `.claudeignore` is a separate concern — files excluded from git may still be present locally and burn context.
 
 ---
 
-## License
-
-MIT — [NickCirv/context-diet](https://github.com/NickCirv/context-diet)
+<div align="center">
+<sub>Zero dependencies · Node 18+ · MIT · by <a href="https://github.com/NickCirv">NickCirv</a></sub>
+</div>
