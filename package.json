@@ -6,5 +6,6 @@
   "bin": { "context-diet": "./index.js" },
   "keywords": ["claude", "context-window", "ai", "optimization", "cli", "claude-code"],
   "license": "MIT",
-  "engines": { "node": ">=18" }
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=20" }
 }
